@@ -127,6 +127,8 @@ namespace UnityEngine.Rendering.HighDefinition
 
             [Reload("Runtime/Material/Visibility/Visibility.shader")]
             public Shader visibilityPS;
+            [Reload("Runtime/Material/Visibility/VisibilityOIT.shader")]
+            public Shader visibilityOITPS;
             [Reload("Runtime/Material/Visibility/CreateMaterialDepth.shader")]
             public Shader createMaterialDepthPS;
             [Reload("Runtime/Material/Visibility/VBufferClassification.compute")]
