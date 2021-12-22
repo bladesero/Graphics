@@ -30,6 +30,7 @@ Shader "Hidden/HDRP/DebugFullScreen"
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Debug/FullScreenDebug.hlsl"
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Builtin/BuiltinData.hlsl"
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Visibility/VisibilityCommon.hlsl"
+            #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Visibility/VisibilityOITResources.hlsl"
 
             CBUFFER_START (UnityDebug)
             float _FullScreenDebugMode;
@@ -391,6 +392,16 @@ Shader "Hidden/HDRP/DebugFullScreen"
                     #endif
 
                     return float4(Visibility::DebugVisIndexToRGB(debugIndex), 1.0f);
+                }
+                if (_FullScreenDebugMode == FULLSCREENDEBUGMODE_VISIBILITY_OITSTENCIL_COUNT)
+                {
+                    float2 sampleUV = input.texcoord.xy / _RTHandleScale.xy;
+                    uint2 samplePosition = (uint2)(sampleUV * _DebugViewportSize.xy);
+                    uint stencilSample = GetStencilValue(LOAD_TEXTURE2D_X(_VisOITCount, samplePosition));
+                    if (stencilSample == 0u)
+                        return float4(sampleUV.yyy * sampleUV.yyy * float3(0,0,0.08), 1.0);
+
+                    return (float)stencilSample / 255.0;
                 }
                 if (_FullScreenDebugMode == FULLSCREENDEBUGMODE_PRE_REFRACTION_COLOR_PYRAMID
                     || _FullScreenDebugMode == FULLSCREENDEBUGMODE_FINAL_COLOR_PYRAMID)

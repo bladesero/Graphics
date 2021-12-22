@@ -73,6 +73,7 @@ namespace UnityEngine.Rendering.HighDefinition
                 {
                     depthBufferBits = DepthBits.Depth24,
                     clearBuffer = true,
+                    clearColor = Color.clear,
                     name = "VisOITStencilCount"
                 }), DepthAccess.ReadWrite);
 

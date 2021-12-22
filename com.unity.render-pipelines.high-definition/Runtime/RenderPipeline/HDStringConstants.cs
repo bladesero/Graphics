@@ -1084,6 +1084,7 @@ namespace UnityEngine.Rendering.HighDefinition
         public static readonly int _VisBufferMaterialTiles = Shader.PropertyToID("_VisBufferMaterialTiles");
         public static readonly int _VisBufferBucketTiles = Shader.PropertyToID("_VisBufferBucketTiles");
         public static readonly int _VisBufferDepthTexture = Shader.PropertyToID("_VisBufferDepthTexture");
+        public static readonly int _VisOITCount = Shader.PropertyToID("_VisOITCount");
 
         //Visibility classification
         public static readonly int _VisBufferFeatureTileOutput = Shader.PropertyToID("_VisBufferFeatureTileOutput");
