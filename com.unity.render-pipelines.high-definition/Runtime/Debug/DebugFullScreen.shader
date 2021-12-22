@@ -395,13 +395,16 @@ Shader "Hidden/HDRP/DebugFullScreen"
                 }
                 if (_FullScreenDebugMode == FULLSCREENDEBUGMODE_VISIBILITY_OITSTENCIL_COUNT)
                 {
+                    #ifdef DOTS_INSTANCING_ON
                     float2 sampleUV = input.texcoord.xy / _RTHandleScale.xy;
                     uint2 samplePosition = (uint2)(sampleUV * _DebugViewportSize.xy);
                     uint stencilSample = GetStencilValue(LOAD_TEXTURE2D_X(_VisOITCount, samplePosition));
-                    if (stencilSample == 0u)
-                        return float4(sampleUV.yyy * sampleUV.yyy * float3(0,0,0.08), 1.0);
-
-                    return (float)stencilSample / 255.0;
+                    float3 stencilColor = stencilSample == 0u ? (sampleUV.yyy * sampleUV.yyy * float3(0,0,0.08)) : ((float)stencilSample / 255.0).xxx;
+                    float4 debugHistogram = DebugDrawOITHistogram(sampleUV, (float2)_ScreenSize.xy); 
+                    return float4(lerp(stencilColor.rgb, debugHistogram.rgb, debugHistogram.a), 1.0);
+                    #else
+                        return float4(1,0,0,0);
+                    #endif
                 }
                 if (_FullScreenDebugMode == FULLSCREENDEBUGMODE_PRE_REFRACTION_COLOR_PYRAMID
                     || _FullScreenDebugMode == FULLSCREENDEBUGMODE_FINAL_COLOR_PYRAMID)

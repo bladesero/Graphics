@@ -11,6 +11,7 @@ namespace UnityEngine.Rendering.HighDefinition
         {
             public bool valid;
             public TextureHandle stencilBuffer;
+            public ComputeBufferHandle histogramBuffer;
             public RenderBRGBindingData BRGBindingData;
 
             public static VBufferOITOutput NewDefault()
@@ -26,11 +27,12 @@ namespace UnityEngine.Rendering.HighDefinition
             public VBufferOITOutput Read(RenderGraphBuilder builder)
             {
                 VBufferOITOutput readVBuffer = VBufferOITOutput.NewDefault();
+                readVBuffer.valid = valid;
+                readVBuffer.stencilBuffer = builder.ReadTexture(stencilBuffer);
                 if (!valid)
                     return readVBuffer;
 
-                readVBuffer.valid = valid;
-                readVBuffer.stencilBuffer = builder.ReadTexture(stencilBuffer);
+                readVBuffer.histogramBuffer = builder.ReadComputeBuffer(histogramBuffer);
                 readVBuffer.BRGBindingData = BRGBindingData;
                 return readVBuffer;
             }
@@ -93,7 +95,51 @@ namespace UnityEngine.Rendering.HighDefinition
                     });
             }
 
+            output.vbufferOIT.histogramBuffer = ComputeOITTiledHistogram(renderGraph, new Vector2Int((int)hdCamera.screenSize.x, (int)hdCamera.screenSize.y), hdCamera.viewCount, output.vbufferOIT.stencilBuffer);
+
             output.vbufferOIT.BRGBindingData = BRGBindingData;
+        }
+
+        class OITTileHistogramPassData
+        {
+            public int tileSize;
+            public Vector2Int screenSize;
+            public ComputeShader cs;
+            public Texture2D ditherTexture;
+            public TextureHandle stencilBuffer;
+            public ComputeBufferHandle histogramBuffer;
+        }
+
+        ComputeBufferHandle ComputeOITTiledHistogram(RenderGraph renderGraph, Vector2Int screenSize, int viewCount, TextureHandle stencilBuffer)
+        {
+            ComputeBufferHandle histogramBuffer = ComputeBufferHandle.nullHandle;
+            using (var builder = renderGraph.AddRenderPass<OITTileHistogramPassData>("OITTileHistogramPassData", out var passData, ProfilingSampler.Get(HDProfileId.OITHistogram)))
+            {
+                builder.AllowRendererListCulling(false);
+                passData.cs = defaultResources.shaders.oitTileHistogramCS;
+                passData.screenSize = screenSize;
+                passData.tileSize = 128;
+                passData.ditherTexture = defaultResources.textures.blueNoise128RTex;
+                passData.stencilBuffer = builder.ReadTexture(stencilBuffer);                
+                passData.histogramBuffer = builder.WriteComputeBuffer(renderGraph.CreateComputeBuffer(new ComputeBufferDesc(passData.tileSize * passData.tileSize, sizeof(uint), ComputeBufferType.Raw) { name = "OITHistogram" }));
+                histogramBuffer = passData.histogramBuffer;
+
+                builder.SetRenderFunc(
+                    (OITTileHistogramPassData data, RenderGraphContext context) =>
+                    {
+                        int clearKernel = data.cs.FindKernel("MainClearHistogram");
+                        context.cmd.SetComputeBufferParam(data.cs, clearKernel, HDShaderIDs._VisOITHistogramOutput, data.histogramBuffer);
+                        context.cmd.DispatchCompute(data.cs, clearKernel, HDUtils.DivRoundUp(data.tileSize * data.tileSize, 64), 1, 1);
+
+                        int histogramKernel = data.cs.FindKernel("MainCreateStencilHistogram");
+                        context.cmd.SetComputeTextureParam(data.cs, histogramKernel, HDShaderIDs._OITDitherTexture, data.ditherTexture);
+                        context.cmd.SetComputeTextureParam(data.cs, histogramKernel, HDShaderIDs._VisOITCount, (RenderTexture)data.stencilBuffer, 0, RenderTextureSubElement.Stencil);
+                        context.cmd.SetComputeBufferParam(data.cs, histogramKernel, HDShaderIDs._VisOITHistogramOutput, data.histogramBuffer);
+                        context.cmd.DispatchCompute(data.cs, histogramKernel, HDUtils.DivRoundUp(data.screenSize.x, 8), HDUtils.DivRoundUp(data.screenSize.y, 8), viewCount);
+                    });
+            }
+
+            return histogramBuffer;
         }
     }
 }

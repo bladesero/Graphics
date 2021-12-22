@@ -409,7 +409,10 @@ namespace UnityEngine.Rendering.HighDefinition
                         mpb.SetFloat(HDShaderIDs._MinMotionVector, data.debugDisplaySettings.data.minMotionVectorLength);
 
                         if (vBufferOIT.valid)
+                        {
                             mpb.SetTexture(HDShaderIDs._VisOITCount, data.vBufferOIT.stencilBuffer, RenderTextureSubElement.Stencil);
+                            mpb.SetBuffer(HDShaderIDs._VisOITHistogramBuffer, data.vBufferOIT.histogramBuffer);
+                        }
                         else
                             mpb.SetTexture(HDShaderIDs._VisOITCount, data.vBufferOIT.stencilBuffer);
 
