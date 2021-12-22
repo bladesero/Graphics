@@ -1,4 +1,4 @@
-#if SHADERPASS != SHADERPASS_VISIBILITY
+#if SHADERPASS != SHADERPASS_VISIBILITY_OIT_COUNT
 #error SHADERPASS_is_not_correctly_define
 #endif
 
@@ -32,21 +32,7 @@ PackedVaryingsType Vert(AttributesMesh inputMesh)
 }
 
 void Frag(
-    PackedVaryingsToPS packedInput,
-    out uint outVisibility0 : SV_Target0,
-    out uint outVisibility1 : SV_Target1)
+    PackedVaryingsToPS packedInput)
 {
-    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(packedInput);
-    FragInputs input = UnpackVaryingsToFragInputs(packedInput);
-    #ifdef DOTS_INSTANCING_ON
-        Visibility::VisibilityData visData;
-        visData.valid = true;
-        visData.DOTSInstanceIndex = GetDOTSInstanceIndex();
-        visData.primitiveID = 10;
-        visData.batchID = packedInput.vpass.batchID;
-        Visibility::PackVisibilityData(visData, outVisibility0, outVisibility1);
-    #else
-        outVisibility0 = 0;
-        outVisibility1 = 0;
-    #endif
+    //empty fragment shader :)
 }
