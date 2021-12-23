@@ -388,7 +388,7 @@ namespace UnityEngine.Rendering.HighDefinition
                         var mpb = ctx.renderGraphPool.GetTempMaterialPropertyBlock();
                         ComputeBuffer fullscreenBuffer = data.fullscreenBuffer;
 
-                        if (data.vBufferInfo.valid)
+                        if (data.vBufferInfo.valid || data.vBufferOIT.valid)
                             data.debugFullScreenMaterial.EnableKeyword("DOTS_INSTANCING_ON");
                         else
                             data.debugFullScreenMaterial.DisableKeyword("DOTS_INSTANCING_ON");
@@ -408,13 +408,11 @@ namespace UnityEngine.Rendering.HighDefinition
                         mpb.SetFloat(HDShaderIDs._VertexDensityMaxPixelCost, (float)data.debugDisplaySettings.data.maxVertexDensity);
                         mpb.SetFloat(HDShaderIDs._MinMotionVector, data.debugDisplaySettings.data.minMotionVectorLength);
 
-                        if (vBufferOIT.valid)
+                        if (data.vBufferOIT.valid)
                         {
                             mpb.SetTexture(HDShaderIDs._VisOITCount, data.vBufferOIT.stencilBuffer, RenderTextureSubElement.Stencil);
                             mpb.SetBuffer(HDShaderIDs._VisOITHistogramBuffer, data.vBufferOIT.histogramBuffer);
                         }
-                        else
-                            mpb.SetTexture(HDShaderIDs._VisOITCount, data.vBufferOIT.stencilBuffer);
 
                         if (fullscreenBuffer != null)
                             ctx.cmd.SetRandomWriteTarget(1, fullscreenBuffer);
